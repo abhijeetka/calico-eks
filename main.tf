@@ -90,6 +90,30 @@ resource "null_resource" "delete_daemon_set" {
   }
 }
 
+#resource "null_resource" "delete_kube_dns" {
+#  depends_on = [module.eks, null_resource.delete_daemon_set]
+#
+#  triggers = {
+#    always_run = "${timestamp()}"
+#  }
+#
+#  provisioner "local-exec" {
+#    command = "kubectl patch ds -n kube-system --kubeconfig=./kube.conf kube-proxy -p '{\"spec\":{\"template\":{\"spec\":{\"nodeSelector\":{\"non-calico\": \"true\"}}}}}' || true "
+#  }
+#}
+#
+#resource "null_resource" "delete_kube_dns_pods" {
+#  depends_on = [module.eks, null_resource.delete_kube_dns]
+#
+#  triggers = {
+#    always_run = "${timestamp()}"
+#  }
+#
+#  provisioner "local-exec" {
+#    command = " kubectl delete pod -n kube-system -l k8s-app=kube-dns --kubeconfig=./kube.conf || true "
+#  }
+#}
+
 resource "helm_release" "calico_cni" {
   depends_on = [null_resource.delete_daemon_set]
   name       = "calico"
@@ -99,7 +123,9 @@ resource "helm_release" "calico_cni" {
   version    = "v3.22.5"
 
   wait = false
-
+  values = [
+    "${file("calico.values.yaml")}"
+  ]
 }
 
 resource "null_resource" "change_ip_pool" {
@@ -124,6 +150,26 @@ resource "null_resource" "restart_calico_controller" {
 
 }
 
+#resource "null_resource" "create_cm" {
+#  depends_on = [null_resource.restart_calico_controller]
+#  triggers = {
+#    always_run = "${timestamp()}"
+#  }
+#  provisioner "local-exec" {
+#    command = <<EOT
+#      "APISERVER=$(kubectl config view --kubeconfig=./kube.conf -o jsonpath=\"{.clusters[?(@.name==\"${local.name}\")].cluster.server}\"| sed 's/https:\/\///') || true"
+#      "kubectl create cm kubernetes-services-endpoint --from-literal=KUBERNETES_SERVICE_HOST=$APISERVER   --kubeconfig=./kube.conf -n tigera-operator || true "
+#      "echo 'Sleep for 60 seconds'; sleep 60s;"
+#      "echo 'Disable kube-dns'"
+#      "kubectl patch ds -n kube-system kube-proxy -p '{\"spec\":{\"template\":{\"spec\":{\"nodeSelector\":{\"non-calico\": \"true\"}}}}}' || true "
+#      "kubectl delete pod -n kube-system -l k8s-app=kube-dns || true"
+#    EOT
+#  }
+#
+#}
+
+
+
 module "eks_managed_node_group" {
   source = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
   version = "18.31.0"
@@ -131,6 +177,7 @@ module "eks_managed_node_group" {
   name            = "${local.name}-ng"
   cluster_name    = local.name
   cluster_version = var.cluster_version
+
 
   subnet_ids = [aws_subnet.eks_private_subnet_1.id, aws_subnet.eks_private_subnet_2.id]
 

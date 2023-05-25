@@ -25,5 +25,5 @@ variable "key_pair" {
 }
 
 variable "cluster_version" {
-  default = "1.22"
+  default = "1.23"
 }

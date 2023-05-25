@@ -1,0 +1,9 @@
+---
+installation:
+  enabled: true
+  kubernetesProvider: "EKS"
+  calicoNetwork:
+    linuxDataplane: BPF
+    ipPools:
+      - cidr: 172.16.0.0/12
+        blockSize: 26
