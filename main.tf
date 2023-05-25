@@ -129,7 +129,7 @@ resource "helm_release" "calico_cni" {
 }
 
 resource "null_resource" "change_ip_pool" {
-  depends_on = [module.eks_managed_node_group]
+  depends_on = [module.eks_managed_node_group,null_resource.delete_daemon_set]
   triggers = {
     always_run = "${timestamp()}"
   }
@@ -148,6 +148,19 @@ resource "null_resource" "restart_calico_controller" {
     command = "kubectl rollout restart deploy calico-kube-controllers -n calico-system --kubeconfig=./kube.conf | kubectl get po -n calico-system --kubeconfig=./kube.conf || true"
   }
 
+}
+
+
+resource "null_resource" "create_configmap" {
+  depends_on = [null_resource.restart_calico_controller]
+
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
+  provisioner "local-exec" {
+    command = "/bin/bash configmap.sh ${local.name}"
+  }
 }
 
 #resource "null_resource" "create_cm" {
