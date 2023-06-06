@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
-    bucket  = "terraform-global-state-calibo-prod-acc"
+    bucket  = "YOUR-BUCEKT"
     region  = "us-east-1"
     encrypt = true
-    key     = "eks-calico-test/terraform.tfstate"
+    key     = "eks-calico-test-1/terraform.tfstate"
   }
 }
