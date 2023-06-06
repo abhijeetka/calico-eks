@@ -25,5 +25,9 @@ variable "key_pair" {
 }
 
 variable "cluster_version" {
-  default = "1.22"
+  default = "1.24"
+}
+
+variable "calico_version" {
+  default = "v3.25.1"
 }

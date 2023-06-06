@@ -96,7 +96,7 @@ resource "helm_release" "calico_cni" {
 
   repository = "https://docs.tigera.io/calico/charts"
   chart      = "tigera-operator"
-  version    = "v3.22.5"
+  version    = var.calico_version
 
   wait = false
 
@@ -108,7 +108,7 @@ resource "null_resource" "change_ip_pool" {
     always_run = "${timestamp()}"
   }
   provisioner "local-exec" {
-    command = "sleep 10s; kubectl get ippool default-ipv4-ippool -o yaml --kubeconfig=./kube.conf | sed -e 's|cidr: 192.168.0.0/16|cidr: 172.16.0.0/12|' | kubectl apply --kubeconfig=./kube.conf -f - | kubectl describe ippool --kubeconfig=./kube.conf || true"
+      command = "sleep 10s; kubectl get ippool default-ipv4-ippool -o yaml --kubeconfig=./kube.conf | sed -e 's|cidr: 192.168.0.0/16|cidr: 172.16.0.0/12|' | kubectl apply --kubeconfig=./kube.conf -f - | kubectl describe ippool --kubeconfig=./kube.conf || true"
   }
 
 }
@@ -141,9 +141,11 @@ module "eks_managed_node_group" {
 
   disk_size = 50
   vpc_id = aws_vpc.eks_vpc.id
-  min_size     = 1
-  max_size     = 1
-  desired_size = 1
+  min_size     = 2
+  max_size     = 2
+  desired_size = 2
+  ami_type = "BOTTLEROCKET_x86_64"
+  platform = "bottlerocket"
 
   instance_types = ["t3.large"]
   capacity_type  = "ON_DEMAND"
