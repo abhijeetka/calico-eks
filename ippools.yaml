@@ -1,0 +1,20 @@
+apiVersion: v1
+items:
+- apiVersion: crd.projectcalico.org/v1
+  kind: IPPool
+  metadata:
+    annotations:
+    name: default-ipv4-ippool
+  spec:
+    allowedUses:
+    - Workload
+    - Tunnel
+    blockSize: 26
+    cidr: 192.160.0.0/12
+    ipipMode: Always
+    natOutgoing: true
+    nodeSelector: all()
+    vxlanMode: Never
+kind: List
+metadata:
+  resourceVersion: ""
